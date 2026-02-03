@@ -1,24 +1,25 @@
-import { Card, CardContent, CardHeader } from '@/shared/ui/card';
-import { Skeleton } from '@/shared/ui/skeleton';
-import { Separator } from '@/shared/ui/separator';
-import { Badge } from '@/shared/ui/badge';
-import { Button } from '@/shared/ui/button';
-import { Heart } from 'lucide-react';
-import type { ExerciseDetailsProps } from '@/entities/types';
-import Image from 'next/image';
+import { Card, CardContent, CardHeader } from "@/shared/ui/card";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { Separator } from "@/shared/ui/separator";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Heart } from "lucide-react";
+import type { ExerciseDetailsProps } from "@/entities/types";
+import Image from "next/image";
 
 /**
  * Componente de detalhes completos do exercício
  */
-export function ExerciseDetails({ 
-  exercise, 
-  onFavorite, 
+export function ExerciseDetails({
+  exercise,
+  onFavorite,
   isFavorite = false,
-  isLoadingFavorite = false 
+  isLoadingFavorite = false,
 }: ExerciseDetailsProps) {
-  const mainImage = exercise.images?.find((img) => img.is_main)?.image || 
-                    exercise.images?.[0]?.image || 
-                    '/placeholder-exercise.png';
+  const mainImage =
+    exercise.images?.find((img) => img.is_main)?.image ||
+    exercise.images?.[0]?.image ||
+    "/placeholder-exercise.png";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -26,7 +27,7 @@ export function ExerciseDetails({
       <div className="relative w-full h-64 md:h-96 rounded-lg overflow-hidden mb-6 bg-muted">
         <Image
           src={mainImage}
-          alt={exercise.name || 'Exercise'}
+          alt={exercise.name || "Exercise"}
           fill
           className="object-cover"
           priority
@@ -37,7 +38,7 @@ export function ExerciseDetails({
       <Card>
         <CardHeader>
           <h1 className="text-3xl font-bold mb-4">
-            {exercise.name || 'Unnamed Exercise'}
+            {exercise.name || "Unnamed Exercise"}
           </h1>
           <div className="flex gap-2">
             <Badge variant="secondary">Category {exercise.category}</Badge>
@@ -77,21 +78,24 @@ export function ExerciseDetails({
           )}
 
           {/* Secondary muscles */}
-          {exercise.muscles_secondary && exercise.muscles_secondary.length > 0 && (
-            <>
-              <div>
-                <h2 className="text-xl font-semibold mb-3">Secondary Muscles</h2>
-                <div className="flex gap-2 flex-wrap">
-                  {exercise.muscles_secondary.map((muscleId) => (
-                    <Badge key={muscleId} variant="outline">
-                      Muscle {muscleId}
-                    </Badge>
-                  ))}
+          {exercise.muscles_secondary &&
+            exercise.muscles_secondary.length > 0 && (
+              <>
+                <div>
+                  <h2 className="text-xl font-semibold mb-3">
+                    Secondary Muscles
+                  </h2>
+                  <div className="flex gap-2 flex-wrap">
+                    {exercise.muscles_secondary.map((muscleId) => (
+                      <Badge key={muscleId} variant="outline">
+                        Muscle {muscleId}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <Separator />
-            </>
-          )}
+                <Separator />
+              </>
+            )}
 
           {/* Equipment */}
           {exercise.equipment && exercise.equipment.length > 0 && (
@@ -114,11 +118,13 @@ export function ExerciseDetails({
           <Button
             onClick={onFavorite}
             disabled={isLoadingFavorite}
-            variant={isFavorite ? 'default' : 'outline'}
+            variant={isFavorite ? "default" : "outline"}
             className="w-full"
           >
-            <Heart className={`mr-2 h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
-            {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+            <Heart
+              className={`mr-2 h-4 w-4 ${isFavorite ? "fill-current" : ""}`}
+            />
+            {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
           </Button>
         </CardContent>
       </Card>
@@ -129,7 +135,10 @@ export function ExerciseDetails({
           <h2 className="text-2xl font-bold mb-4">Gallery</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {exercise.images.map((image) => (
-              <div key={image.id} className="relative h-32 rounded-lg overflow-hidden bg-muted">
+              <div
+                key={image.id}
+                className="relative h-32 rounded-lg overflow-hidden bg-muted"
+              >
                 <Image
                   src={image.image}
                   alt={`${exercise.name} - Gallery image`}

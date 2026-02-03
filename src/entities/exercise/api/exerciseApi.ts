@@ -1,4 +1,4 @@
-import axiosInstance from '@/shared/lib/axios';
+import axiosInstance from "@/shared/lib/axios";
 import {
   Exercise,
   Category,
@@ -8,16 +8,16 @@ import {
   WgerApiResponse,
   FetchExercisesParams,
   ApiError,
-} from '@/entities/types';
-import { AxiosError } from 'axios';
-import { toast } from 'sonner';
+} from "@/entities/types";
+import { AxiosError } from "axios";
+import { toast } from "sonner";
 
 /**
- * Obtem lista de exercícios com filtros opcionais
- * Endpoint: GET /exercise/
+ * Obtem lista de exercícios com filtros opcionais e suas imagens
+ * Endpoint: GET /exercise/ + GET /exerciseimage/ em paralelo
  */
 export async function fetchExercises(
-  params: FetchExercisesParams = {}
+  params: FetchExercisesParams = {},
 ): Promise<WgerApiResponse<Exercise>> {
   try {
     const defaultParams: FetchExercisesParams = {
@@ -29,22 +29,39 @@ export async function fetchExercises(
 
     // Remove parâmetros null/undefined
     const cleanParams: Partial<FetchExercisesParams> = {};
-    (Object.keys(defaultParams) as Array<keyof FetchExercisesParams>).forEach((key) => {
-      const value = defaultParams[key];
-      if (value != null) {
-        cleanParams[key] = value;
+    (Object.keys(defaultParams) as Array<keyof FetchExercisesParams>).forEach(
+      (key) => {
+        const value = defaultParams[key];
+        if (value != null) {
+          cleanParams[key] = value;
+        }
+      },
+    );
+
+    const response = await axiosInstance.get<WgerApiResponse<Exercise>>(
+      "/exercise/",
+      { params: cleanParams },
+    );
+
+    // Buscar imagens para todos os exercícios em paralelo (não bloqueia se falhar)
+    const imagePromises = response.data.results.map(async (exercise) => {
+      try {
+        const images = await fetchExerciseImages(exercise.id);
+        return { ...exercise, images };
+      } catch {
+        return exercise; // Retorna sem imagens se falhar
       }
     });
 
-    const response = await axiosInstance.get<WgerApiResponse<Exercise>>(
-      '/exercise/',
-      { params: cleanParams }
-    );
+    const exercisesWithImages = await Promise.all(imagePromises);
 
-    return response.data;
+    return {
+      ...response.data,
+      results: exercisesWithImages,
+    };
   } catch (error) {
-    toast.error('Failed to load exercises');
-    throw handleApiError(error, 'Failed to fetch exercises');
+    toast.error("Failed to load exercises");
+    throw handleApiError(error, "Failed to fetch exercises");
   }
 }
 
@@ -58,9 +75,9 @@ export async function fetchExerciseById(id: number): Promise<Exercise> {
     return response.data;
   } catch (error) {
     if (error instanceof AxiosError && error.response?.status === 404) {
-      toast.error('Exercise not found');
+      toast.error("Exercise not found");
     } else {
-      toast.error('Failed to load exercise details');
+      toast.error("Failed to load exercise details");
     }
     throw handleApiError(error, `Failed to fetch exercise with ID ${id}`);
   }
@@ -70,16 +87,19 @@ export async function fetchExerciseById(id: number): Promise<Exercise> {
  * Obtem todas as imagens associadas a um exercício
  * Endpoint: GET /exerciseimage/?exercise={exerciseId}
  */
-export async function fetchExerciseImages(exerciseId: number): Promise<ExerciseImage[]> {
+export async function fetchExerciseImages(
+  exerciseId: number,
+): Promise<ExerciseImage[]> {
   try {
     const response = await axiosInstance.get<WgerApiResponse<ExerciseImage>>(
-      '/exerciseimage/',
-      { params: { exercise: exerciseId } }
+      "/exerciseimage/",
+      { params: { exercise: exerciseId } },
     );
     return response.data.results;
-  } catch (error) {
-    toast.error('Failed to load exercise images');
-    throw handleApiError(error, `Failed to fetch images for exercise ${exerciseId}`);
+  } catch {
+    // Silenciar erro de imagens - não é crítico
+    console.warn(`No images found for exercise ${exerciseId}`);
+    return [];
   }
 }
 
@@ -89,11 +109,12 @@ export async function fetchExerciseImages(exerciseId: number): Promise<ExerciseI
  */
 export async function fetchCategories(): Promise<Category[]> {
   try {
-    const response = await axiosInstance.get<WgerApiResponse<Category>>('/exercisecategory/');
+    const response =
+      await axiosInstance.get<WgerApiResponse<Category>>("/exercisecategory/");
     return response.data.results;
   } catch (error) {
-    toast.error('Failed to load categories');
-    throw handleApiError(error, 'Failed to fetch categories');
+    toast.error("Failed to load categories");
+    throw handleApiError(error, "Failed to fetch categories");
   }
 }
 
@@ -103,11 +124,12 @@ export async function fetchCategories(): Promise<Category[]> {
  */
 export async function fetchMuscles(): Promise<Muscle[]> {
   try {
-    const response = await axiosInstance.get<WgerApiResponse<Muscle>>('/muscle/');
+    const response =
+      await axiosInstance.get<WgerApiResponse<Muscle>>("/muscle/");
     return response.data.results;
   } catch (error) {
-    toast.error('Failed to load muscles');
-    throw handleApiError(error, 'Failed to fetch muscles');
+    toast.error("Failed to load muscles");
+    throw handleApiError(error, "Failed to fetch muscles");
   }
 }
 
@@ -117,11 +139,12 @@ export async function fetchMuscles(): Promise<Muscle[]> {
  */
 export async function fetchEquipment(): Promise<Equipment[]> {
   try {
-    const response = await axiosInstance.get<WgerApiResponse<Equipment>>('/equipment/');
+    const response =
+      await axiosInstance.get<WgerApiResponse<Equipment>>("/equipment/");
     return response.data.results;
   } catch (error) {
-    toast.error('Failed to load equipment');
-    throw handleApiError(error, 'Failed to fetch equipment');
+    toast.error("Failed to load equipment");
+    throw handleApiError(error, "Failed to fetch equipment");
   }
 }
 
@@ -140,7 +163,7 @@ function handleApiError(error: unknown, defaultMessage: string): ApiError {
   return {
     message: defaultMessage,
     status: 500,
-    code: 'UNKNOWN_ERROR',
+    code: "UNKNOWN_ERROR",
   };
 }
 
@@ -165,6 +188,6 @@ export function getMainImage(exercise: Exercise): string | null {
  * Remove tags HTML de uma string
  */
 export function stripHtmlTags(htmlDescription: string): string {
-  if (!htmlDescription) return '';
-  return htmlDescription.replace(/<[^>]*>/g, '').trim();
+  if (!htmlDescription) return "";
+  return htmlDescription.replace(/<[^>]*>/g, "").trim();
 }

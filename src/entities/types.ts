@@ -1,4 +1,3 @@
-
 // ENTIDADES PRINCIPAIS DA API WGER
 /**
  * Representa um exercício físico da API Wger
@@ -179,6 +178,9 @@ export interface ExerciseGridProps {
   exercises: Exercise[];
   isLoading: boolean;
   error?: string;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 /**
@@ -229,7 +231,7 @@ export interface FetchExercisesParams {
 /**
  * Erro retornado pela API
  * Estrutura padronizada para tratamento de erros
- */export interface ApiError {
+ */ export interface ApiError {
   message: string;
   status: number;
   code?: string;
@@ -242,7 +244,7 @@ export interface FetchExercisesParams {
  */
 export interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
 /**
@@ -308,17 +310,35 @@ export type AsyncData<T> = {
  * Chaves de rotas da aplicação
  * Usado para navegação tipada
  */
-export type RouteKey = 'HOME' | 'FAVORITES' | 'EXERCISE_DETAILS';
+export type RouteKey = "HOME" | "FAVORITES" | "EXERCISE_DETAILS";
 
 /**
  * Tipos de toast/notificação
  * Usado no sistema de notificações
  */
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type ToastType = "success" | "error" | "warning" | "info";
 
 /**
  * Modos de tema da aplicação
  * 'light' = claro, 'dark' = escuro, 'system' = segue preferência do SO
  */
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = "light" | "dark" | "system";
 
+// AUTH CONTEXT
+/**
+ * Interface do contexto de autenticação
+ */
+export interface AuthContextValue {
+  user: User | null;
+  loading: boolean;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
+  isAuthenticated: boolean;
+}
+
+/**
+ * Props do AuthProvider
+ */
+export interface AuthProviderProps {
+  children: React.ReactNode;
+}

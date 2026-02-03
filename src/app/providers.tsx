@@ -1,4 +1,3 @@
-'use client'
+"use client";
 
 // TODO: Implementar providers aqui
-
