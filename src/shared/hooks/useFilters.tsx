@@ -1,6 +1,13 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+  useEffect,
+} from "react";
 
 interface FilterState {
   search: string;
@@ -19,12 +26,54 @@ interface FilterContextValue {
 
 const FilterContext = createContext<FilterContextValue | undefined>(undefined);
 
-export function FilterProvider({ children }: { children: ReactNode }) {
-  const [filters, setFiltersState] = useState<FilterState>({
-    search: '',
+const FILTERS_STORAGE_KEY = "exefit-filters";
+
+// Função para carregar filtros do localStorage
+const loadFiltersFromStorage = (): FilterState => {
+  if (typeof window === "undefined") {
+    return {
+      search: "",
+      category: undefined,
+      muscle: undefined,
+    };
+  }
+
+  try {
+    const stored = localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error("Error loading filters from localStorage:", error);
+  }
+
+  return {
+    search: "",
     category: undefined,
     muscle: undefined,
-  });
+  };
+};
+
+// Função para guardar filtros no localStorage
+const saveFiltersToStorage = (filters: FilterState) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
+  } catch (error) {
+    console.error("Error saving filters to localStorage:", error);
+  }
+};
+
+export function FilterProvider({ children }: { children: ReactNode }) {
+  const [filters, setFiltersState] = useState<FilterState>(
+    loadFiltersFromStorage,
+  );
+
+  // Guardar filtros no localStorage sempre que mudarem
+  useEffect(() => {
+    saveFiltersToStorage(filters);
+  }, [filters]);
 
   const setSearch = useCallback((search: string) => {
     setFiltersState((prev) => ({ ...prev, search }));
@@ -38,13 +87,16 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     setFiltersState((prev) => ({ ...prev, muscle }));
   }, []);
 
-  const setFilters = useCallback((newFilters: { category?: number; muscle?: number }) => {
-    setFiltersState((prev) => ({ ...prev, ...newFilters }));
-  }, []);
+  const setFilters = useCallback(
+    (newFilters: { category?: number; muscle?: number }) => {
+      setFiltersState((prev) => ({ ...prev, ...newFilters }));
+    },
+    [],
+  );
 
   const clearFilters = useCallback(() => {
     setFiltersState({
-      search: '',
+      search: "",
       category: undefined,
       muscle: undefined,
     });
@@ -69,7 +121,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 export function useFilters() {
   const context = useContext(FilterContext);
   if (!context) {
-    throw new Error('useFilters must be used within FilterProvider');
+    throw new Error("useFilters must be used within FilterProvider");
   }
   return context;
 }

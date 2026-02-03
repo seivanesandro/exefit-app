@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { 
-  Dumbbell, 
-  Target, 
-  Zap, 
+import { useState, useEffect } from "react";
+import {
+  Dumbbell,
+  Target,
+  Zap,
   Activity,
   Heart,
   TrendingUp,
@@ -12,13 +12,16 @@ import {
   Weight,
   Waves,
   Loader2,
-  FunnelX
-} from 'lucide-react';
-import { Button } from '@/shared/ui/button';
-import { Separator } from '@/shared/ui/separator';
-import { fetchCategories, fetchMuscles } from '@/entities/exercise/api/exerciseApi';
-import type { Category, Muscle } from '@/entities/types';
-import { useFilters } from '@/shared/hooks/useFilters';
+  FunnelX,
+} from "lucide-react";
+import { Button } from "@/shared/ui/button";
+import { Separator } from "@/shared/ui/separator";
+import {
+  fetchCategories,
+  fetchMuscles,
+} from "@/entities/exercise/api/exerciseApi";
+import type { Category, Muscle } from "@/entities/types";
+import { useFilters } from "@/shared/hooks/useFilters";
 
 interface FilterMenuProps {
   onFilterChange: (filters: { category?: number; muscle?: number }) => void;
@@ -63,21 +66,22 @@ export function FilterMenu({ onFilterChange }: FilterMenuProps) {
       setLoading(true);
       const [categoriesData, musclesData] = await Promise.all([
         fetchCategories(),
-        fetchMuscles()
+        fetchMuscles(),
       ]);
       setCategories(categoriesData);
       setMuscles(musclesData);
       setError(null);
     } catch (err) {
-      console.error('Error loading filters:', err);
-      setError('Failed to load filters');
+      console.error("Error loading filters:", err);
+      setError("Failed to load filters");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCategoryClick = (categoryId: number) => {
-    const newCategory = filters.category === categoryId ? undefined : categoryId;
+    const newCategory =
+      filters.category === categoryId ? undefined : categoryId;
     onFilterChange({ category: newCategory, muscle: filters.muscle });
   };
 
@@ -90,7 +94,7 @@ export function FilterMenu({ onFilterChange }: FilterMenuProps) {
     setClearing(true);
     clearGlobalFilters();
     onFilterChange({});
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     setClearing(false);
   };
 
@@ -119,8 +123,8 @@ export function FilterMenu({ onFilterChange }: FilterMenuProps) {
     <div className="space-y-6">
       {/* Clear Filters Button */}
       {(filters.category || filters.muscle) && (
-        <Button 
-          onClick={clearFilters} 
+        <Button
+          onClick={clearFilters}
           disabled={clearing}
           className=" w-auto px-2 bg-gray-800 text-white hover:bg-[var(--destructive)] font-semibold cursor-pointer"
         >
@@ -130,7 +134,7 @@ export function FilterMenu({ onFilterChange }: FilterMenuProps) {
               Cleaning...
             </>
           ) : (
-            <FunnelX className='w-3 h-3' />
+            <FunnelX className="w-3 h-3" />
           )}
         </Button>
       )}
@@ -143,7 +147,7 @@ export function FilterMenu({ onFilterChange }: FilterMenuProps) {
             <Button
               key={category.id}
               onClick={() => handleCategoryClick(category.id)}
-              variant={filters.category === category.id ? 'default' : 'ghost'}
+              variant={filters.category === category.id ? "default" : "ghost"}
               className="w-full justify-start cursor-pointer"
             >
               {categoryIcons[category.id] || <Dumbbell className="h-4 w-4" />}
@@ -163,7 +167,7 @@ export function FilterMenu({ onFilterChange }: FilterMenuProps) {
             <Button
               key={muscle.id}
               onClick={() => handleMuscleClick(muscle.id)}
-              variant={filters.muscle === muscle.id ? 'default' : 'ghost'}
+              variant={filters.muscle === muscle.id ? "default" : "ghost"}
               className="w-full justify-start cursor-pointer"
             >
               {muscleIcons[muscle.id] || <Activity className="h-4 w-4" />}

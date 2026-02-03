@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "@/shared/ui/sonner";
 import { AuthProvider } from "@/shared/hooks/useAuth";
 import { FilterProvider } from "@/shared/hooks/useFilters";
+import { CategoriesProvider } from "@/shared/hooks/useCategoriesContext";
 import { Navbar } from "@/widgets/navbar/Navbar";
 
 export const metadata: Metadata = {
@@ -33,11 +34,13 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased" suppressHydrationWarning>
         <AuthProvider>
-          <FilterProvider>
-            <Navbar />
-            {children}
-            <Toaster position="bottom-right" />
-          </FilterProvider>
+          <CategoriesProvider>
+            <FilterProvider>
+              <Navbar />
+              {children}
+              <Toaster position="bottom-right" richColors expand={true} />
+            </FilterProvider>
+          </CategoriesProvider>
         </AuthProvider>
       </body>
     </html>

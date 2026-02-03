@@ -5,6 +5,7 @@ import { Heart, Dumbbell } from "lucide-react";
 import type { ExerciseCardProps } from "@/entities/types";
 import Image from "next/image";
 import { useAuth } from "@/shared/hooks/useAuth";
+import { useCategories } from "@/shared/hooks/useCategoriesContext";
 
 /**
  * Card de exercício para o grid da página principal
@@ -15,11 +16,12 @@ export function ExerciseCard({
   onFavoriteToggle,
 }: ExerciseCardProps) {
   const { user } = useAuth();
+  const { getCategoryName } = useCategories();
   const mainImage =
     exercise.images?.find((img) => img.is_main)?.image ||
     exercise.images?.[0]?.image;
-  
-  const isGif = mainImage?.toLowerCase().endsWith('.gif');
+
+  const isGif = mainImage?.toLowerCase().endsWith(".gif");
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -37,16 +39,18 @@ export function ExerciseCard({
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-3">
             <Dumbbell className="h-12 w-12 text-slate-400" strokeWidth={1.5} />
-            <p className="text-xs text-slate-500 font-medium tracking-wider">NO IMAGE YET</p>
+            <p className="text-xs text-slate-500 font-medium tracking-wider">
+              NO IMAGE YET
+            </p>
           </div>
         )}
       </div>
 
       <CardContent className="p-4">
         <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-          {exercise.name || "Unnamed Exercise"}
+          {exercise.name?.trim() || "Unnamed Exercise"}
         </h3>
-        <Badge variant="secondary">Category {exercise.category}</Badge>
+        <Badge variant="secondary">{getCategoryName(exercise.category)}</Badge>
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex gap-2">
@@ -69,8 +73,8 @@ export function ExerciseCard({
             }}
             className={`cursor-pointer ${isFavorite ? "border-red-500" : ""}`}
           >
-            <Heart 
-              className={`h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} 
+            <Heart
+              className={`h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`}
             />
           </Button>
         )}

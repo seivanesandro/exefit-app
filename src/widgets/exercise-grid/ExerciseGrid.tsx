@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import {
   ExerciseCard,
   ExerciseCardSkeleton,
@@ -11,6 +14,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/shared/ui/pagination";
+import { toast } from "sonner";
 import type { ExerciseGridProps } from "@/entities/types";
 
 // Componente de grid de exercícios
@@ -22,6 +26,19 @@ export function ExerciseGrid({
   totalPages = 1,
   onPageChange,
 }: ExerciseGridProps) {
+  // Toast quando não há resultados - SEMPRE dispara quando exercises === 0
+  useEffect(() => {
+    console.log("ExerciseGrid - isLoading:", isLoading, "error:", error, "exercises.length:", exercises.length);
+    
+    if (!isLoading && !error && exercises.length === 0) {
+      console.log("🔥 DISPARANDO TOAST!");
+      toast.info("No exercises found", {
+        description: "Try adjusting your search or filters.",
+        duration: 5000,
+      });
+    }
+  }, [exercises.length, isLoading, error]);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -68,7 +85,7 @@ export function ExerciseGrid({
       pages.push(1);
 
       if (currentPage > 3) {
-        pages.push('ellipsis-start');
+        pages.push("ellipsis-start");
       }
 
       // Mostrar páginas ao redor da página atual
@@ -80,7 +97,7 @@ export function ExerciseGrid({
       }
 
       if (currentPage < totalPages - 2) {
-        pages.push('ellipsis-end');
+        pages.push("ellipsis-end");
       }
 
       // Sempre mostrar última página
@@ -113,15 +130,24 @@ export function ExerciseGrid({
               {/* Previous Button */}
               <PaginationItem>
                 <PaginationPrevious
-                  onClick={() => currentPage > 1 && onPageChange?.(currentPage - 1)}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  onClick={() =>
+                    currentPage > 1 && onPageChange?.(currentPage - 1)
+                  }
+                  className={
+                    currentPage === 1
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
                 />
               </PaginationItem>
 
-              {/* Page Numbers */}
+              {/* Page Numbers - Hidden on Mobile */}
               {getPageNumbers().map((page, index) => (
-                <PaginationItem key={`${page}-${index}`}>
-                  {typeof page === 'number' ? (
+                <PaginationItem
+                  key={`${page}-${index}`}
+                  className="hidden md:block"
+                >
+                  {typeof page === "number" ? (
                     <PaginationLink
                       onClick={() => onPageChange?.(page)}
                       isActive={currentPage === page}
@@ -135,11 +161,24 @@ export function ExerciseGrid({
                 </PaginationItem>
               ))}
 
+              {/* Current Page Indicator - Mobile Only */}
+              <PaginationItem className="md:hidden">
+                <span className="flex h-10 items-center justify-center px-4 text-sm font-medium">
+                  {currentPage} / {totalPages}
+                </span>
+              </PaginationItem>
+
               {/* Next Button */}
               <PaginationItem>
                 <PaginationNext
-                  onClick={() => currentPage < totalPages && onPageChange?.(currentPage + 1)}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  onClick={() =>
+                    currentPage < totalPages && onPageChange?.(currentPage + 1)
+                  }
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
                 />
               </PaginationItem>
             </PaginationContent>

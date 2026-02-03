@@ -79,8 +79,12 @@ export function Navbar() {
                     className="rounded-full object-cover cursor-pointer"
                   />
                 </Button>
-              </DropdownMenuTrigger> 
-              <DropdownMenuContent className="w-56 mt-3 bg-white" align="end" forceMount>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-56 mt-3 bg-white"
+                align="end"
+                forceMount
+              >
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm text-start font-medium leading-none">
@@ -112,14 +116,17 @@ export function Navbar() {
         <div className="flex md:hidden items-center gap-2">
           {loading ? (
             <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
-          ) : isAuthenticated && user && (
-            <Image
-              src={user.photoURL}
-              alt={user.displayName}
-              width={32}
-              height={32}
-              className="rounded-full object-cover"
-            />
+          ) : (
+            isAuthenticated &&
+            user && (
+              <Image
+                src={user.photoURL}
+                alt={user.displayName}
+                width={32}
+                height={32}
+                className="rounded-full object-cover"
+              />
+            )
           )}
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
