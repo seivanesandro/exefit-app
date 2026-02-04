@@ -31,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="antialiased" suppressHydrationWarning>
+    <html lang="en" className="antialiased" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <AuthProvider>
           <CategoriesProvider>
             <FilterProvider>

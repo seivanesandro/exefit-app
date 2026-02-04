@@ -1,50 +1,60 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchExercises } from "@/entities/exercise/api/exerciseApi";
-import type { Exercise } from "@/entities/types";
-
-interface UseExercisesParams {
-  search?: string;
-  category?: string;
-  muscle?: string;
-  page?: number;
-  limit?: number;
-}
-
-interface UseExercisesReturn {
-  exercises: Exercise[];
-  loading: boolean;
-  error: string | undefined;
-  totalPages: number;
-  currentPage: number;
-  refetch: () => Promise<void>;
-}
+import type {
+  Exercise,
+  UseExercisesParams,
+  UseExercisesReturn,
+} from "@/entities/types";
 
 /**
  * Custom hook para buscar exercícios com suporte a filtros e paginação
- * @param filters - Filtros de pesquisa (search, category, muscle)
- * @param page - Página atual (default: 1)
- * @param limit - Quantidade de cards por página (default: 5)
+ * @param category - ID da categoria para filtrar exercícios (server-side)
+ * @param muscle - ID do músculo para filtrar exercícios (server-side)
+ * @param page - Página atual para paginação (server-side)
+ * @param limit - Quantidade de itens por página (server-side)
+ * @note Search is disabled due to API limitations - use category/muscle filters
  */
 export function useExercises({
-  search,
   category,
   muscle,
   page = 1,
   limit = 5,
-}: UseExercisesParams): UseExercisesReturn {
-  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
+}: Omit<UseExercisesParams, 'search'>): UseExercisesReturn {
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
   const [totalPages, setTotalPages] = useState(1);
+  const allExercisesRef = useRef<Exercise[]>([]);
+  const lastFiltersRef = useRef<string>("");
+
+  // ⭐ LIMPAR CACHE quando filtro muda (categoria ou músculo)
+  useEffect(() => {
+    const currentFilterKey = `${category}-${muscle}`;
+    if (lastFiltersRef.current !== currentFilterKey) {
+      allExercisesRef.current = []; // LIMPA CACHE
+      lastFiltersRef.current = currentFilterKey;
+    }
+  }, [category, muscle]);
 
   const loadExercises = useCallback(async () => {
     try {
       setLoading(true);
       setError(undefined);
 
+      // Se já temos exercícios em cache, usa-os (sem buscar API)
+      if (allExercisesRef.current.length > 0) {
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const displayExercises = allExercisesRef.current.slice(startIndex, endIndex);
+        setExercises(displayExercises);
+        setTotalPages(Math.ceil(allExercisesRef.current.length / limit) || 1);
+        setLoading(false);
+        return;
+      }
+
       const params: Record<string, string | number> = {
         language: 2, // English
-        limit: 50, // Buscar 50 exercícios para balance entre performance e ordenação
+        limit: 50, // Máximo permitido pela API
         offset: 0,
       };
 
@@ -52,70 +62,64 @@ export function useExercises({
         params.category = category;
       }
       if (muscle && muscle !== "undefined") {
-        params.muscles = muscle;
+        params.muscles = muscle; // A API usa 'muscles' no plural
       }
 
       const response = await fetchExercises(params);
 
       if (!response || !response.results) {
-        setAllExercises([]);
+        setExercises([]);
         setTotalPages(1);
         setLoading(false);
         return;
       }
 
-      // Filtrar exercícios localmente por nome se search existir
-      let finalExercises = response.results;
-      if (search && search.trim()) {
-        const searchLower = search.toLowerCase();
-        finalExercises = finalExercises.filter((exercise) => {
-          const name = exercise.name?.toLowerCase() || "";
-          return name.includes(searchLower);
-        });
-      }
+      const finalExercises = response.results;
 
-      // Ordenar: exercícios COM imagens primeiro, SEM imagens depois
+      // ⭐ ORDENAR: EXERCÍCIOS COM IMAGENS SEMPRE EM PRIMEIRO ⭐
       const sortedExercises = [...finalExercises].sort((a, b) => {
         const aHasImages = a.images && a.images.length > 0;
         const bHasImages = b.images && b.images.length > 0;
 
-        if (aHasImages && !bHasImages) return -1;
-        if (!aHasImages && bHasImages) return 1;
-        return 0;
+        if (aHasImages && !bHasImages) return -1; // A tem imagem, B não → A vem primeiro
+        if (!aHasImages && bHasImages) return 1; // B tem imagem, A não → B vem primeiro
+        return 0; // Ambos têm ou não têm → ordem original
       });
 
-      setAllExercises(sortedExercises);
+      // ⭐ PAGINAÇÃO CLIENT-SIDE: Pega 5 cards da lista ordenada
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const displayExercises = sortedExercises.slice(startIndex, endIndex);
+      
+      // Guarda TODOS os exercícios ordenados em cache (useRef não causa re-render)
+      allExercisesRef.current = sortedExercises;
+      setExercises(displayExercises);
 
-      // Calcular total de páginas baseado nos resultados filtrados e ordenados
-      const totalCount = sortedExercises.length;
-      const calculatedTotalPages = Math.ceil(totalCount / limit) || 1; // Garante que é no mínimo 1
+      // Calcula total de páginas com base nos exercícios ordenados
+      const calculatedTotalPages = Math.ceil(sortedExercises.length / limit) || 1;
       setTotalPages(calculatedTotalPages);
     } catch (err) {
-      console.error("Error loading exercises:", err);
+      console.error("[useExercises] Error loading exercises:", err);
+      console.error("[useExercises] Error details:", JSON.stringify(err, null, 2));
       const errorMessage =
         err instanceof Error
           ? err.message
           : "Failed to load exercises. Please try again.";
       setError(errorMessage);
-      setAllExercises([]);
+      setExercises([]);
+      allExercisesRef.current = [];
       setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  }, [search, category, muscle, limit]);
+  }, [category, muscle, limit, page]);
 
   useEffect(() => {
     loadExercises();
   }, [loadExercises]);
 
-  // Paginação local (client-side)
-  const paginatedExercises = allExercises.slice(
-    (page - 1) * limit,
-    page * limit,
-  );
-
   return {
-    exercises: paginatedExercises,
+    exercises: exercises,
     loading,
     error,
     totalPages,

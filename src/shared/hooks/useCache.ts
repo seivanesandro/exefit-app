@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { CacheItem } from "@/entities/types";
+import { useState, useEffect, useCallback } from "react";
+import type { CacheItem } from "@/entities/types";
 
 /**
  * Configuração padrão do cache

@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 /**
  * Obtem lista de exercícios com filtros opcionais e suas imagens
- * Endpoint: GET /exercise/ + GET /exerciseimage/ em paralelo
+ * Endpoint: GET /exercise/ + GET /exerciseimage/ em paralelo (leve)
  */
 export async function fetchExercises(
   params: FetchExercisesParams = {},
@@ -43,42 +43,72 @@ export async function fetchExercises(
       { params: cleanParams },
     );
 
-    // Buscar imagens para todos os exercícios em paralelo (não bloqueia se falhar)
-    const imagePromises = response.data.results.map(async (exercise) => {
-      try {
-        const images = await fetchExerciseImages(exercise.id);
-        return { ...exercise, images };
-      } catch {
-        return exercise; // Retorna sem imagens se falhar
-      }
-    });
-
-    const exercisesWithImages = await Promise.all(imagePromises);
+    // A API Wger tem BUG: /exerciseinfo/ retorna name VAZIO!
+    // SOLUÇÃO: Buscar apenas imagens e usar ID como referência
+    const enhancedExercises = await Promise.all(
+      response.data.results.map(async (exercise) => {
+        try {
+          // Buscar apenas imagens (rápido e confiável)
+          const images = await fetchExerciseImages(exercise.id);
+          
+          // Nome baseado no ID (formato profissional)
+          const readableName = `Exercise #${exercise.id}`;
+          
+          return {
+            ...exercise,
+            name: readableName,
+            images: images || [],
+            description: `Exercise ID: ${exercise.id} | Category: ${exercise.category}`,
+          };
+        } catch {
+          // Fallback: sem imagens
+          return {
+            ...exercise,
+            name: `Exercise #${exercise.id}`,
+            images: [],
+            description: `Exercise ID: ${exercise.id}`,
+          };
+        }
+      })
+    );
 
     return {
       ...response.data,
-      results: exercisesWithImages,
+      results: enhancedExercises,
     };
   } catch (error) {
-    toast.error("Failed to load exercises");
+    console.error("[fetchExercises] Error:", error);
     throw handleApiError(error, "Failed to fetch exercises");
   }
 }
 
 /**
  * Obtem detalhes completos de um exercício específico
- * Endpoint: GET /exerciseinfo/{id}/
+ * Endpoint: GET /exercise/{id}/
  */
 export async function fetchExerciseById(id: number): Promise<Exercise> {
   try {
-    const response = await axiosInstance.get<Exercise>(`/exerciseinfo/${id}/`);
-    return response.data;
+    // Buscar exercício base
+    const exerciseResponse = await axiosInstance.get<Exercise>(
+      `/exercise/${id}/`,
+      {
+        params: { language: 2 }, // English
+        timeout: 5000,
+      }
+    );
+
+    const exercise = exerciseResponse.data;
+
+    // Buscar imagens do exercício
+    const images = await fetchExerciseImages(id);
+
+    // Retornar exercício com imagens (mantém nome e descrição original da API)
+    return {
+      ...exercise,
+      images,
+    };
   } catch (error) {
-    if (error instanceof AxiosError && error.response?.status === 404) {
-      toast.error("Exercise not found");
-    } else {
-      toast.error("Failed to load exercise details");
-    }
+    console.warn(`[fetchExerciseById] Failed for ID ${id}:`, error);
     throw handleApiError(error, `Failed to fetch exercise with ID ${id}`);
   }
 }

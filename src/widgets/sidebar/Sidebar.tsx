@@ -10,17 +10,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/shared/ui/sheet";
-import { SearchBar } from "@/features/search/ui/SearchBar";
 import { FilterMenu } from "@/features/filter/ui/FilterMenu";
 import { useFilters } from "@/shared/hooks/useFilters";
 
 export function Sidebar() {
   const [open, setOpen] = useState(false);
-  const { filters, setSearch, setFilters } = useFilters();
-
-  const handleSearchChange = (value: string) => {
-    setSearch(value);
-  };
+  const { setFilters } = useFilters();
 
   const handleFilterChange = (newFilters: {
     category?: number;
@@ -47,20 +42,13 @@ export function Sidebar() {
         className="w-[300px] sm:w-[400px] overflow-y-auto bg-white"
       >
         <SheetHeader>
-          <SheetTitle>Search & Filters</SheetTitle>
+          <SheetTitle>Filters</SheetTitle>
+          <p className="text-sm text-muted-foreground mt-2">
+            Filter exercises by category or muscle group
+          </p>
         </SheetHeader>
 
         <div className="mt-6 space-y-6 pb-20">
-          {/* Search Bar */}
-          <div>
-            <h3 className="text-sm font-semibold mb-2">Search</h3>
-            <SearchBar
-              value={filters.search}
-              onChange={handleSearchChange}
-              placeholder="Search exercises..."
-            />
-          </div>
-
           {/* Filter Menu */}
           <FilterMenu onFilterChange={handleFilterChange} />
         </div>

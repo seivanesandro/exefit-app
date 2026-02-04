@@ -5,22 +5,19 @@ import {
   useContext,
   useState,
   useEffect,
-  ReactNode,
 } from "react";
 import { fetchCategories } from "@/entities/exercise/api/exerciseApi";
-import type { Category } from "@/entities/types";
-
-interface CategoriesContextValue {
-  categories: Category[];
-  loading: boolean;
-  getCategoryName: (id: number) => string;
-}
+import type {
+  Category,
+  CategoriesContextValue,
+  CategoriesProviderProps,
+} from "@/entities/types";
 
 const CategoriesContext = createContext<CategoriesContextValue | undefined>(
   undefined,
 );
 
-export function CategoriesProvider({ children }: { children: ReactNode }) {
+export function CategoriesProvider({ children }: CategoriesProviderProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 

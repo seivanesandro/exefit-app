@@ -17,11 +17,10 @@ function ExerciseContent() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const { exercises, loading, error, totalPages } = useExercises({
-    search: filters.search,
     category: filters.category?.toString(),
     muscle: filters.muscle?.toString(),
     page: currentPage,
-    limit: 5, // Default: 5 cards per page
+    limit: 5, // 5 cards por página
   });
 
   const handlePageChange = (page: number) => {

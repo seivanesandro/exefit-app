@@ -46,11 +46,29 @@ export interface Category {
 export interface Muscle {
   id: number;
   name: string;
-  name_en: string;
   is_front: boolean;
   image_url_main: string;
   image_url_secondary: string;
 }
+
+export interface UseExercisesParams {
+  search?: string;
+  category?: string;
+  muscle?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface UseExercisesReturn {
+  exercises: Exercise[];
+  loading: boolean;
+  error: string | undefined;
+  totalPages: number;
+  currentPage: number;
+  refetch: () => Promise<void>;
+}
+
+//  API Response Type
 
 /**
  * Equipamento necessário para o exercício
@@ -112,10 +130,9 @@ export interface FirebaseTimestamp {
  * Estado dos filtros de pesquisa de exercícios
  */
 export interface FilterState {
-  category: number | null;
-  muscle: number | null;
-  equipment: number | null;
-  searchQuery: string;
+  search: string;
+  category?: number;
+  muscle?: number;
 }
 
 /**
@@ -162,9 +179,9 @@ export interface ExerciseCardProps {
 }
 
 /**
- * Props do componente ExerciseDetails
+ * Props do componente ExerciseCard (DEPRECATED - usar ExerciseDetailsProps para página completa)
  */
-export interface ExerciseDetailsProps {
+export interface ExerciseCardComponentProps {
   exercise: Exercise;
   onFavorite?: () => void;
   isFavorite?: boolean;
@@ -188,11 +205,7 @@ export interface ExerciseGridProps {
  * Menu lateral de filtros de pesquisa
  */
 export interface FilterMenuProps {
-  categories: Category[];
-  muscles: Muscle[];
-  equipment: Equipment[];
-  currentFilter: FilterState;
-  onFilterChange: (filter: Partial<FilterState>) => void;
+  onFilterChange: (filters: { category?: number; muscle?: number }) => void;
 }
 
 /**
@@ -341,4 +354,76 @@ export interface AuthContextValue {
  */
 export interface AuthProviderProps {
   children: React.ReactNode;
+}
+
+/**
+ * Props do FilterProvider
+ */
+export interface FilterProviderProps {
+  children: React.ReactNode;
+}
+
+/**
+ * Valor do contexto de filtros
+ */
+export interface FilterContextValue {
+  filters: FilterState;
+  setSearch: (search: string) => void;
+  setCategory: (category?: number) => void;
+  setMuscle: (muscle?: number) => void;
+  setFilters: (filters: { category?: number; muscle?: number }) => void;
+  clearFilters: () => void;
+}
+
+/**
+ * Props do CategoriesProvider
+ */
+export interface CategoriesProviderProps {
+  children: React.ReactNode;
+}
+
+/**
+ * Valor do contexto de categorias
+ */
+export interface CategoriesContextValue {
+  categories: Category[];
+  loading: boolean;
+  getCategoryName: (id: number) => string;
+}
+
+// PÁGINA DE DETALHES DO EXERCÍCIO
+/**
+ * Props do componente ExerciseDetails
+ * Exibe informações completas de um exercício
+ */
+export interface ExerciseDetailsProps {
+  exercise: Exercise;
+  categories: Category[];
+  muscles: Muscle[];
+  equipment: Equipment[];
+}
+
+/**
+ * Item de breadcrumb para navegação
+ */
+export interface BreadcrumbItem {
+  label: string;
+  href: string;
+}
+
+/**
+ * Props do componente Breadcrumbs
+ */
+export interface BreadcrumbsProps {
+  items: BreadcrumbItem[];
+}
+
+/**
+ * Props do componente ImageGallery
+ * Galeria de imagens com thumbnails clicáveis
+ */
+export interface ImageGalleryProps {
+  images: ExerciseImage[];
+  exerciseName: string;
+  onImageClick: (index: number) => void;
 }

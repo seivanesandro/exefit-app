@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import {
   Dumbbell,
   Target,
@@ -20,12 +20,8 @@ import {
   fetchCategories,
   fetchMuscles,
 } from "@/entities/exercise/api/exerciseApi";
-import type { Category, Muscle } from "@/entities/types";
+import type { Category, Muscle, FilterMenuProps } from "@/entities/types";
 import { useFilters } from "@/shared/hooks/useFilters";
-
-interface FilterMenuProps {
-  onFilterChange: (filters: { category?: number; muscle?: number }) => void;
-}
 
 const categoryIcons: Record<number, React.ReactNode> = {
   8: <Dumbbell className="h-4 w-4" />,
@@ -49,7 +45,7 @@ const muscleIcons: Record<number, React.ReactNode> = {
   8: <Waves className="h-4 w-4" />,
 };
 
-export function FilterMenu({ onFilterChange }: FilterMenuProps) {
+export const FilterMenu = memo(function FilterMenu({ onFilterChange }: FilterMenuProps) {
   const { filters, clearFilters: clearGlobalFilters } = useFilters();
   const [categories, setCategories] = useState<Category[]>([]);
   const [muscles, setMuscles] = useState<Muscle[]>([]);
@@ -82,12 +78,14 @@ export function FilterMenu({ onFilterChange }: FilterMenuProps) {
   const handleCategoryClick = (categoryId: number) => {
     const newCategory =
       filters.category === categoryId ? undefined : categoryId;
-    onFilterChange({ category: newCategory, muscle: filters.muscle });
+    // ⭐ Quando seleciona categoria, LIMPA o músculo
+    onFilterChange({ category: newCategory, muscle: undefined });
   };
 
   const handleMuscleClick = (muscleId: number) => {
     const newMuscle = filters.muscle === muscleId ? undefined : muscleId;
-    onFilterChange({ category: filters.category, muscle: newMuscle });
+    // ⭐ Quando seleciona músculo, LIMPA a categoria
+    onFilterChange({ category: undefined, muscle: newMuscle });
   };
 
   const clearFilters = async () => {
@@ -178,4 +176,4 @@ export function FilterMenu({ onFilterChange }: FilterMenuProps) {
       </div>
     </div>
   );
-}
+});

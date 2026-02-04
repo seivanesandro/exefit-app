@@ -1,225 +1,242 @@
-import { Card, CardContent, CardHeader } from "@/shared/ui/card";
-import { Skeleton } from "@/shared/ui/skeleton";
-import { Separator } from "@/shared/ui/separator";
+"use client";
+
+import { useMemo } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft, Dumbbell, Target, Zap, Activity } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { Heart } from "lucide-react";
-import type { ExerciseDetailsProps } from "@/entities/types";
-import Image from "next/image";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Separator } from "@/shared/ui/separator";
+import { Breadcrumbs } from "@/shared/ui/breadcrumbs";
+import { ImageGallery } from "./ImageGallery";
+import type { ExerciseDetailsProps, BreadcrumbItem } from "@/entities/types";
 
 /**
- * Componente de detalhes completos do exercício
+ * Remove tags HTML da descrição para evitar problemas com imagens sem alt
  */
-export function ExerciseDetails({
-  exercise,
-  onFavorite,
-  isFavorite = false,
-  isLoadingFavorite = false,
-}: ExerciseDetailsProps) {
-  const mainImage =
-    exercise.images?.find((img) => img.is_main)?.image ||
-    exercise.images?.[0]?.image ||
-    "/placeholder-exercise.png";
-
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Hero image */}
-      <div className="relative w-full h-64 md:h-96 rounded-lg overflow-hidden mb-6 bg-muted">
-        <Image
-          src={mainImage}
-          alt={exercise.name || "Exercise"}
-          fill
-          className="object-cover"
-          priority
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
-        />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <h1 className="text-3xl font-bold mb-4">
-            {exercise.name || "Unnamed Exercise"}
-          </h1>
-          <div className="flex gap-2">
-            <Badge variant="secondary">Category {exercise.category}</Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          {/* Description */}
-          {exercise.description && (
-            <>
-              <div>
-                <h2 className="text-xl font-semibold mb-3">Description</h2>
-                <div
-                  className="prose max-w-none text-muted-foreground"
-                  dangerouslySetInnerHTML={{ __html: exercise.description }}
-                />
-              </div>
-              <Separator />
-            </>
-          )}
-
-          {/* Primary muscles */}
-          {exercise.muscles && exercise.muscles.length > 0 && (
-            <>
-              <div>
-                <h2 className="text-xl font-semibold mb-3">Primary Muscles</h2>
-                <div className="flex gap-2 flex-wrap">
-                  {exercise.muscles.map((muscleId) => (
-                    <Badge key={muscleId} variant="outline">
-                      Muscle {muscleId}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <Separator />
-            </>
-          )}
-
-          {/* Secondary muscles */}
-          {exercise.muscles_secondary &&
-            exercise.muscles_secondary.length > 0 && (
-              <>
-                <div>
-                  <h2 className="text-xl font-semibold mb-3">
-                    Secondary Muscles
-                  </h2>
-                  <div className="flex gap-2 flex-wrap">
-                    {exercise.muscles_secondary.map((muscleId) => (
-                      <Badge key={muscleId} variant="outline">
-                        Muscle {muscleId}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                <Separator />
-              </>
-            )}
-
-          {/* Equipment */}
-          {exercise.equipment && exercise.equipment.length > 0 && (
-            <>
-              <div>
-                <h2 className="text-xl font-semibold mb-3">Equipment</h2>
-                <div className="flex gap-2 flex-wrap">
-                  {exercise.equipment.map((equipId) => (
-                    <Badge key={equipId} variant="outline">
-                      Equipment {equipId}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <Separator />
-            </>
-          )}
-
-          {/* Favorite button */}
-          <Button
-            onClick={onFavorite}
-            disabled={isLoadingFavorite}
-            variant={isFavorite ? "default" : "outline"}
-            className="w-full"
-          >
-            <Heart
-              className={`mr-2 h-4 w-4 ${isFavorite ? "fill-current" : ""}`}
-            />
-            {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Image gallery */}
-      {exercise.images && exercise.images.length > 1 && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Gallery</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {exercise.images.map((image) => (
-              <div
-                key={image.id}
-                className="relative h-32 rounded-lg overflow-hidden bg-muted"
-              >
-                <Image
-                  src={image.image}
-                  alt={`${exercise.name} - Gallery image`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+function stripHtmlTags(html: string): string {
+  return html.replace(/<[^>]*>/g, '').trim();
 }
 
 /**
- * Skeleton da página de detalhes
+ * Componente de detalhes completo do exercício
+ * Exibe: hero image, badges, descrição, músculos, equipamento, galeria
  */
-export function ExerciseDetailsSkeleton() {
+export function ExerciseDetails({
+  exercise,
+  categories,
+  muscles,
+  equipment,
+}: ExerciseDetailsProps) {
+
+  // Encontrar nomes das categorias, músculos e equipamento
+  const categoryName = useMemo(
+    () => categories.find((c) => c.id === exercise.category)?.name || "Unknown",
+    [categories, exercise.category],
+  );
+
+  const primaryMuscles = useMemo(
+    () =>
+      exercise.muscles
+        .map((mId) => muscles.find((m) => m.id === mId))
+        .filter((m): m is NonNullable<typeof m> => m !== undefined),
+    [muscles, exercise.muscles],
+  );
+
+  const secondaryMuscles = useMemo(
+    () =>
+      exercise.muscles_secondary
+        .map((mId) => muscles.find((m) => m.id === mId))
+        .filter((m): m is NonNullable<typeof m> => m !== undefined),
+    [muscles, exercise.muscles_secondary],
+  );
+
+  const equipmentList = useMemo(
+    () =>
+      exercise.equipment
+        .map((eId) => equipment.find((e) => e.id === eId))
+        .filter((e): e is NonNullable<typeof e> => e !== undefined),
+    [equipment, exercise.equipment],
+  );
+
+  // Alt text para a hero image (sempre garantido não vazio)
+  const heroAlt = exercise.name?.trim() || "Exercise demonstration";
+
+  // Breadcrumbs
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: "Home", href: "/" },
+    { label: heroAlt, href: `/exercicios/${exercise.id}` },
+  ];
+
+  // Hero image (primeira imagem ou placeholder)
+  const heroImage =
+    exercise.images.length > 0
+      ? exercise.images[0].image
+      : "/placeholder-exercise.png";
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <Skeleton className="w-full h-64 md:h-96 rounded-lg mb-6" />
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Breadcrumbs */}
+      <Breadcrumbs items={breadcrumbItems} />
 
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-8 w-3/4 mb-4" />
-          <Skeleton className="h-6 w-24 rounded-full" />
-        </CardHeader>
+      {/* Botão Voltar */}
+      <Link href="/">
+        <Button variant="ghost" className="mb-6">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Exercises
+        </Button>
+      </Link>
 
-        <CardContent className="space-y-6">
-          <div>
-            <Skeleton className="h-6 w-32 mb-3" />
-            <Skeleton className="h-4 w-full mb-2" />
-            <Skeleton className="h-4 w-full mb-2" />
-            <Skeleton className="h-4 w-3/4" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Hero Image */}
+        <div className="space-y-4">
+          <div className="relative aspect-video w-full overflow-hidden rounded-lg border-2 border-gray-200 shadow-lg">
+            <Image
+              src={heroImage}
+              alt={heroAlt}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+            />
           </div>
 
-          <Separator />
+          {/* Galeria de Imagens (se múltiplas) */}
+          {exercise.images.length > 1 && (
+            <ImageGallery
+              images={exercise.images}
+              exerciseName={heroAlt}
+            />
+          )}
+        </div>
 
+        {/* Informações Principais */}
+        <div className="space-y-6">
+          {/* Nome e Badges */}
           <div>
-            <Skeleton className="h-6 w-40 mb-3" />
-            <div className="flex gap-2">
-              <Skeleton className="h-8 w-20 rounded-full" />
-              <Skeleton className="h-8 w-20 rounded-full" />
-              <Skeleton className="h-8 w-20 rounded-full" />
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              {heroAlt}
+            </h1>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="default" className="text-sm">
+                <Dumbbell className="mr-1 h-3 w-3" />
+                {categoryName}
+              </Badge>
+              {exercise.images.length > 0 && (
+                <Badge variant="secondary" className="text-sm">
+                  {exercise.images.length} Image
+                  {exercise.images.length > 1 ? "s" : ""}
+                </Badge>
+              )}
             </div>
           </div>
 
           <Separator />
 
-          <div>
-            <Skeleton className="h-6 w-40 mb-3" />
-            <div className="flex gap-2">
-              <Skeleton className="h-8 w-20 rounded-full" />
-              <Skeleton className="h-8 w-20 rounded-full" />
-            </div>
-          </div>
+          {/* Descrição */}
+          {exercise.description && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {stripHtmlTags(exercise.description)}
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
-          <Separator />
+          {/* Músculos Primários */}
+          {primaryMuscles.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  <Target className="mr-2 h-5 w-5 text-red-500" />
+                  Primary Muscles
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {primaryMuscles.map((muscle) => (
+                    <Badge
+                      key={muscle.id}
+                      variant="outline"
+                      className="text-sm border-red-500 text-red-700"
+                    >
+                      {muscle.name}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <div>
-            <Skeleton className="h-6 w-32 mb-3" />
-            <div className="flex gap-2">
-              <Skeleton className="h-8 w-24 rounded-full" />
-              <Skeleton className="h-8 w-24 rounded-full" />
-            </div>
-          </div>
+          {/* Músculos Secundários */}
+          {secondaryMuscles.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  <Activity className="mr-2 h-5 w-5 text-blue-500" />
+                  Secondary Muscles
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {secondaryMuscles.map((muscle) => (
+                    <Badge
+                      key={muscle.id}
+                      variant="outline"
+                      className="text-sm border-blue-500 text-blue-700"
+                    >
+                      {muscle.name}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <Separator />
+          {/* Equipamento */}
+          {equipmentList.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  <Zap className="mr-2 h-5 w-5 text-yellow-500" />
+                  Equipment Needed
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {equipmentList.map((eq) => (
+                    <Badge
+                      key={eq.id}
+                      variant="outline"
+                      className="text-sm border-yellow-500 text-yellow-700"
+                    >
+                      {eq.name}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <Skeleton className="h-12 w-full" />
-        </CardContent>
-      </Card>
-
-      <div className="mt-8">
-        <Skeleton className="h-8 w-32 mb-4" />
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Skeleton className="h-32 w-full rounded-lg" />
-          <Skeleton className="h-32 w-full rounded-lg" />
-          <Skeleton className="h-32 w-full rounded-lg" />
+          {/* Variações */}
+          {exercise.variations && exercise.variations.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Variations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">
+                  {exercise.variations.length} variation
+                  {exercise.variations.length > 1 ? "s" : ""} available
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

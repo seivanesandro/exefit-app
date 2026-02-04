@@ -3,103 +3,113 @@
 import {
   createContext,
   useContext,
-  useState,
   useCallback,
-  ReactNode,
-  useEffect,
+  useSyncExternalStore,
 } from "react";
-
-interface FilterState {
-  search: string;
-  category?: number;
-  muscle?: number;
-}
-
-interface FilterContextValue {
-  filters: FilterState;
-  setSearch: (search: string) => void;
-  setCategory: (category?: number) => void;
-  setMuscle: (muscle?: number) => void;
-  setFilters: (filters: { category?: number; muscle?: number }) => void;
-  clearFilters: () => void;
-}
+import type {
+  FilterState,
+  FilterContextValue,
+  FilterProviderProps,
+} from "@/entities/types";
 
 const FilterContext = createContext<FilterContextValue | undefined>(undefined);
 
 const FILTERS_STORAGE_KEY = "exefit-filters";
 
-// Função para carregar filtros do localStorage
-const loadFiltersFromStorage = (): FilterState => {
-  if (typeof window === "undefined") {
-    return {
-      search: "",
-      category: undefined,
-      muscle: undefined,
-    };
-  }
+const defaultFilters: FilterState = {
+  search: "",
+  category: undefined,
+  muscle: undefined,
+};
 
-  try {
-    const stored = localStorage.getItem(FILTERS_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
+// Store para gerenciar filtros
+class FiltersStore {
+  private listeners = new Set<() => void>();
+  private filters: FilterState = defaultFilters;
+
+  constructor() {
+    // Carregar do localStorage apenas no cliente
+    if (typeof window !== "undefined") {
+      this.loadFromStorage();
     }
-  } catch (error) {
-    console.error("Error loading filters from localStorage:", error);
   }
 
-  return {
-    search: "",
-    category: undefined,
-    muscle: undefined,
-  };
-};
-
-// Função para guardar filtros no localStorage
-const saveFiltersToStorage = (filters: FilterState) => {
-  if (typeof window === "undefined") return;
-
-  try {
-    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
-  } catch (error) {
-    console.error("Error saving filters to localStorage:", error);
+  private loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(FILTERS_STORAGE_KEY);
+      if (stored) {
+        this.filters = JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error("Error loading filters from localStorage:", error);
+    }
   }
-};
 
-export function FilterProvider({ children }: { children: ReactNode }) {
-  const [filters, setFiltersState] = useState<FilterState>(
-    loadFiltersFromStorage,
+  private saveToStorage() {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(this.filters));
+    } catch (error) {
+      console.error("Error saving filters to localStorage:", error);
+    }
+  }
+
+  subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  getSnapshot() {
+    return this.filters;
+  }
+
+  getServerSnapshot() {
+    return defaultFilters;
+  }
+
+  setFilters(newFilters: Partial<FilterState>) {
+    this.filters = { ...this.filters, ...newFilters };
+    this.saveToStorage();
+    this.listeners.forEach((listener) => listener());
+  }
+
+  clearFilters() {
+    this.filters = defaultFilters;
+    this.saveToStorage();
+    this.listeners.forEach((listener) => listener());
+  }
+}
+
+const filtersStore = new FiltersStore();
+
+export function FilterProvider({ children }: FilterProviderProps) {
+  const filters = useSyncExternalStore(
+    filtersStore.subscribe.bind(filtersStore),
+    filtersStore.getSnapshot.bind(filtersStore),
+    filtersStore.getServerSnapshot.bind(filtersStore)
   );
 
-  // Guardar filtros no localStorage sempre que mudarem
-  useEffect(() => {
-    saveFiltersToStorage(filters);
-  }, [filters]);
-
   const setSearch = useCallback((search: string) => {
-    setFiltersState((prev) => ({ ...prev, search }));
+    filtersStore.setFilters({ search });
   }, []);
 
   const setCategory = useCallback((category?: number) => {
-    setFiltersState((prev) => ({ ...prev, category }));
+    filtersStore.setFilters({ category });
   }, []);
 
   const setMuscle = useCallback((muscle?: number) => {
-    setFiltersState((prev) => ({ ...prev, muscle }));
+    filtersStore.setFilters({ muscle });
   }, []);
 
   const setFilters = useCallback(
     (newFilters: { category?: number; muscle?: number }) => {
-      setFiltersState((prev) => ({ ...prev, ...newFilters }));
+      filtersStore.setFilters(newFilters);
     },
     [],
   );
 
   const clearFilters = useCallback(() => {
-    setFiltersState({
-      search: "",
-      category: undefined,
-      muscle: undefined,
-    });
+    filtersStore.clearFilters();
   }, []);
 
   return (
