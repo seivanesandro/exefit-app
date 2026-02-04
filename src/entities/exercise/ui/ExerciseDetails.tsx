@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Separator } from "@/shared/ui/separator";
 import { Breadcrumbs } from "@/shared/ui/breadcrumbs";
 import { ImageGallery } from "./ImageGallery";
+import { FavoriteButton } from "@/entities/favorite/ui/FavoriteButton";
 import type { ExerciseDetailsProps, BreadcrumbItem } from "@/entities/types";
 
 /**
@@ -133,6 +134,14 @@ export function ExerciseDetails({
           </div>
 
           <Separator />
+
+          {/* Botão de Favorito */}
+          <FavoriteButton
+            exerciseId={exercise.id}
+            exerciseName={heroAlt}
+            categoryId={exercise.category}
+            className="w-full"
+          />
 
           {/* Descrição */}
           {exercise.description && (

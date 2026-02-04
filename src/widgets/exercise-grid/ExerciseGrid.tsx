@@ -15,7 +15,18 @@ import {
   PaginationPrevious,
 } from "@/shared/ui/pagination";
 import { toast } from "sonner";
-import type { ExerciseGridProps } from "@/entities/types";
+import type { Exercise } from "@/entities/types";
+
+export interface ExerciseGridProps {
+  exercises: Exercise[];
+  isLoading: boolean;
+  error?: string;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  favorites?: number[];
+  onFavoriteToggle?: (id: number) => void;
+}
 
 // Componente de grid de exercícios
 export function ExerciseGrid({
@@ -25,6 +36,8 @@ export function ExerciseGrid({
   currentPage = 1,
   totalPages = 1,
   onPageChange,
+  favorites = [],
+  onFavoriteToggle,
 }: ExerciseGridProps) {
   // Toast quando não há resultados - SEMPRE dispara quando exercises === 0
   useEffect(() => {
@@ -114,10 +127,8 @@ export function ExerciseGrid({
           <ExerciseCard
             key={exercise.id}
             exercise={exercise}
-            isFavorite={false}
-            onFavoriteToggle={(id) => {
-              console.log("Toggle favorite:", id);
-            }}
+            isFavorite={favorites.includes(exercise.id)}
+            onFavoriteToggle={onFavoriteToggle}
           />
         ))}
       </div>

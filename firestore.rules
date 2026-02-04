@@ -1,0 +1,30 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Regras para a coleção de favoritos
+    match /favorites/{favoriteId} {
+      // Permitir leitura apenas se autenticado E se o userId corresponde ao uid do utilizador
+      allow read: if request.auth != null && 
+                     resource.data.userId == request.auth.uid;
+      
+      // Permitir criar favorito apenas se autenticado E se o userId corresponde ao uid do utilizador
+      allow create: if request.auth != null && 
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Permitir atualizar favorito apenas se autenticado E se o userId corresponde ao uid do utilizador
+      allow update: if request.auth != null && 
+                       resource.data.userId == request.auth.uid;
+      
+      // Permitir deletar favorito apenas se autenticado E se o userId corresponde ao uid do utilizador
+      allow delete: if request.auth != null && 
+                       resource.data.userId == request.auth.uid;
+    }
+    
+    // Negar acesso a todas as outras coleções por padrão
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

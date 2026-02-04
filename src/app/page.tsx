@@ -6,15 +6,19 @@ import { Sidebar } from "@/widgets/sidebar/Sidebar";
 import { ExerciseGrid } from "@/widgets/exercise-grid/ExerciseGrid";
 import { useFilters } from "@/shared/hooks/useFilters";
 import { useExercises } from "@/shared/hooks/useExercises";
+import { useAuth } from "@/shared/hooks/useAuth";
 import {
   fetchCategories,
   fetchMuscles,
 } from "@/entities/exercise/api/exerciseApi";
+import { addFavorite, removeFavorite, subscribeFavorites, type Favorite } from "@/entities/favorite/api/favoriteApi";
 import type { Category, Muscle } from "@/entities/types";
 
 function ExerciseContent() {
   const { filters } = useFilters();
+  const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
+  const [favorites, setFavorites] = useState<Favorite[]>([]);
 
   const { exercises, loading, error, totalPages } = useExercises({
     category: filters.category?.toString(),
@@ -23,10 +27,43 @@ function ExerciseContent() {
     limit: 5, // 5 cards por página
   });
 
+  // Listener de favoritos em tempo real
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = subscribeFavorites(user.uid, (updatedFavorites) => {
+      setFavorites(updatedFavorites);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     // Scroll to top when changing page
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleFavoriteToggle = async (exerciseId: number) => {
+    if (!user) return;
+
+    const isFav = favorites.some((f) => f.exerciseId === exerciseId);
+    const exercise = exercises.find((e) => e.id === exerciseId);
+    if (!exercise) return;
+
+    try {
+      if (isFav) {
+        await removeFavorite(user.uid, exerciseId);
+      } else {
+        await addFavorite(user.uid, {
+          id: exercise.id,
+          name: exercise.name,
+          category: exercise.category,
+        });
+      }
+    } catch (error) {
+      console.error("[HomePage] Error toggling favorite:", error);
+    }
   };
 
   return (
@@ -37,6 +74,8 @@ function ExerciseContent() {
       currentPage={currentPage}
       totalPages={totalPages}
       onPageChange={handlePageChange}
+      favorites={favorites.map((f) => f.exerciseId)}
+      onFavoriteToggle={handleFavoriteToggle}
     />
   );
 }

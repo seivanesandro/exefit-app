@@ -198,6 +198,8 @@ export interface ExerciseGridProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  favorites?: number[];
+  onFavoriteToggle?: (id: number) => void;
 }
 
 /**
