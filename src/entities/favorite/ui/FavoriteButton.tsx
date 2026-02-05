@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Heart } from "lucide-react";
+import { Heart, WifiOff } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { useAuth } from "@/shared/hooks/useAuth";
+import { useOnlineStatus } from "@/shared/hooks/useOnlineStatus";
 import { addFavorite, removeFavorite, isFavorite } from "@/entities/favorite/api/favoriteApi";
+import { toast } from "sonner";
 import {
   Tooltip,
   TooltipContent,
@@ -22,7 +24,8 @@ interface FavoriteButtonProps {
 /**
  * Botão de favorito com animação e tooltip
  * - Se não autenticado: desabilitado com tooltip "Please log in"
- * - Se autenticado: ativo com estado (favorito/não favorito)
+ * - Se offline: desabilitado com tooltip "Internet connection required"
+ * - Se autenticado + online: ativo com estado (favorito/não favorito)
  * - Animação scale ao clicar
  */
 export function FavoriteButton({
@@ -32,27 +35,36 @@ export function FavoriteButton({
   className = "",
 }: FavoriteButtonProps) {
   const { user } = useAuth();
+  const { isOnline } = useOnlineStatus();
   const [isFav, setIsFav] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Verificar se é favorito ao montar
   useEffect(() => {
-    if (user) {
-      checkFavorite();
-    } else {
-      setIsFav(false);
-    }
-  }, [user, exerciseId]);
+    const checkFavorite = async () => {
+      if (!user) {
+        setIsFav(false);
+        return;
+      }
+      const result = await isFavorite(user.uid, exerciseId);
+      setIsFav(result);
+    };
 
-  const checkFavorite = async () => {
-    if (!user) return;
-    const result = await isFavorite(user.uid, exerciseId);
-    setIsFav(result);
-  };
+    checkFavorite();
+  }, [user, exerciseId]);
 
   const handleToggle = async () => {
     if (!user || loading) return;
+
+    // ✅ FASE 9.9: Desabilitar favoritos quando offline
+    if (!isOnline) {
+      toast.error("Connect to the internet", {
+        description: "Favorites require an internet connection",
+        icon: <WifiOff className="h-4 w-4" />,
+      });
+      return;
+    }
 
     setLoading(true);
     setIsAnimating(true);
@@ -82,11 +94,12 @@ export function FavoriteButton({
       variant="outline"
       size="lg"
       onClick={handleToggle}
-      disabled={!user || loading}
+      disabled={!user || loading || !isOnline}
       className={`
         ${className}
         ${isFav ? "border-red-500 bg-red-50 hover:bg-red-100" : "hover:border-red-300"}
         ${isAnimating ? "animate-pulse scale-110" : ""}
+        ${!isOnline ? "opacity-50 cursor-not-allowed" : ""}
         transition-all duration-200
       `}
     >
@@ -95,7 +108,7 @@ export function FavoriteButton({
           isFav ? "fill-red-500 text-red-500" : "text-gray-600"
         }`}
       />
-      {isFav ? "Remove from Favorites" : "Add to Favorites"}
+      {!isOnline ? "Offline" : isFav ? "Remove from Favorites" : "Add to Favorites"}
     </Button>
   );
 
@@ -106,6 +119,19 @@ export function FavoriteButton({
           <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
           <TooltipContent>
             <p>Please log in to add favorites</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  if (!isOnline) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
+          <TooltipContent>
+            <p>Internet connection required</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

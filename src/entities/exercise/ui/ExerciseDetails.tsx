@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Dumbbell, Target, Zap, Activity } from "lucide-react";
@@ -11,6 +11,7 @@ import { Separator } from "@/shared/ui/separator";
 import { Breadcrumbs } from "@/shared/ui/breadcrumbs";
 import { ImageGallery } from "./ImageGallery";
 import { FavoriteButton } from "@/entities/favorite/ui/FavoriteButton";
+import { cacheExercise } from "@/shared/lib/cache";
 import type { ExerciseDetailsProps, BreadcrumbItem } from "@/entities/types";
 
 /**
@@ -30,6 +31,12 @@ export function ExerciseDetails({
   muscles,
   equipment,
 }: ExerciseDetailsProps) {
+
+  // ✅ FASE 9.6: Cache exercise visitado
+  useEffect(() => {
+    cacheExercise(exercise);
+    console.log(`[Cache] Exercise cached: ${exercise.name}`);
+  }, [exercise]);
 
   // Encontrar nomes das categorias, músculos e equipamento
   const categoryName = useMemo(

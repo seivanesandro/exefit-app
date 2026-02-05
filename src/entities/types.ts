@@ -283,6 +283,40 @@ export interface ServiceWorkerState {
   lastSync: number | null;
 }
 
+/**
+ * Props do componente InstallPrompt
+ * Banner/toast para instalar PWA
+ */
+export interface InstallPromptProps {
+  onInstall: () => void;
+  onDismiss: () => void;
+}
+
+/**
+ * Configuração do cache de exercícios
+ */
+export interface CacheConfig {
+  maxExercises: number;
+  expirationTime: number;
+  storageKey: string;
+}
+
+/**
+ * Exercício armazenado em cache
+ */
+export interface CachedExercise {
+  exercise: Exercise;
+  cachedAt: number;
+}
+
+/**
+ * Retorno do hook useOnlineStatus
+ */
+export interface UseOnlineStatusReturn {
+  isOnline: boolean;
+  wasOffline: boolean;
+}
+
 // FORMULÁRIOS
 
 /**
