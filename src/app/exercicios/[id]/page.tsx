@@ -28,17 +28,19 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
     }
 
     const exercise = await fetchExerciseById(id);
+    // Fallback seguro para o nome
+    const exerciseName = "Exercise demonstration";
 
     return {
-      title: `${exercise.name} | ExeFit`,
+      title: `${exerciseName} | ExeFit`,
       description: exercise.description
         ? exercise.description.substring(0, 160)
         : `Learn how to perform ${exercise.name} with proper form and technique.`,
       openGraph: {
-        title: `${exercise.name} | ExeFit`,
+        title: `${exerciseName} | ExeFit`,
         description: exercise.description
           ? exercise.description.substring(0, 160)
-          : `Learn how to perform ${exercise.name}`,
+          : `Learn how to perform ${exerciseName}`,
         images: exercise.images.length > 0 ? [exercise.images[0].image] : [],
       },
     };
