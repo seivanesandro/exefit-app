@@ -1,9 +1,6 @@
 # Configurações de build para o Netlify
 
 [build]
-  # Diretório onde o site está localizado (relativo à raiz do repositório)
-  base = "projectos/exeFit/exefit"
-  
   # Comando para fazer o build do projeto Next.js
   command = "npm run build"
   
