@@ -12,44 +12,24 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-/**
- * Gera metadata dinâmico para SEO
- * Permite indexação individual de cada exercício
- */
-export async function generateMetadata(props: PageProps): Promise<Metadata> {
-  const params = await props.params;
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   try {
     const id = parseInt(params.id, 10);
-    if (isNaN(id)) {
-      return {
-        title: "Exercise Not Found | ExeFit",
-        description: "The requested exercise could not be found.",
-      };
-    }
+    if (isNaN(id)) return {}; // Retorna objeto vazio se o ID for inválido
 
     const exercise = await fetchExerciseById(id);
-    // Fallback seguro para o nome
-    const exerciseName = "Exercise demonstration";
 
-    return {
-      title: `${exerciseName} | ExeFit`,
-      description: exercise.description
-        ? exercise.description.substring(0, 160)
-        : `Learn how to perform ${exercise.name} with proper form and technique.`,
-      openGraph: {
-        title: `${exerciseName} | ExeFit`,
-        description: exercise.description
-          ? exercise.description.substring(0, 160)
-          : `Learn how to perform ${exerciseName}`,
-        images: exercise.images.length > 0 ? [exercise.images[0].image] : [],
-      },
-    };
-  } catch {
-    return {
-      title: "Exercise Not Found | ExeFit",
-      description: "The requested exercise could not be found.",
-    };
+    // Se o exercício existir e tiver nome, define o título. Senão, não define nada.
+    if (exercise?.name) {
+      return {
+        title: exercise.name,
+      };
+    }
+  } catch (error) {
+    console.error("Failed to generate metadata:", error);
   }
+
+  return {}; // Retorna um objeto vazio em caso de erro ou se não houver nome
 }
 
 export default async function ExercisePage(props: PageProps) {
@@ -74,13 +54,9 @@ export default async function ExercisePage(props: PageProps) {
     fetchMuscles().catch(() => []),
     fetchEquipment().catch(() => []),
   ]);
-
-  console.log("[ExercisePage] Exercise loaded:", exercise ? exercise.name : "NULL");
-
   // Se não encontrou o exercício
   if (!exercise) {
-    console.error("[ExercisePage] Exercise not found, calling notFound()");
-    notFound();
+  notFound();
   }
 
   return (
