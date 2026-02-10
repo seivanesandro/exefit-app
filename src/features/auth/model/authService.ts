@@ -30,6 +30,7 @@ googleProvider.addScope("email");
 
 /**
  * Faz login com Google OAuth (popup)
+ * NOTA: O login funciona mesmo que a gravação no Firestore falhe (por permissões)
  */
 export async function loginWithGoogle(): Promise<User> {
   try {
@@ -46,13 +47,23 @@ export async function loginWithGoogle(): Promise<User> {
       lastLogin: now,
     };
 
-    const isNewUser =
-      result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
+    // Tenta gravar no Firestore, mas NÃO bloqueia o login se falhar
+    // (útil se as regras do Firestore não permitirem escrita)
+    try {
+      const isNewUser =
+        result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
 
-    if (isNewUser) {
-      await createUser(userData);
-    } else {
-      await updateLastLogin(firebaseUser.uid);
+      if (isNewUser) {
+        await createUser(userData);
+        console.log("[Auth] Novo utilizador criado no Firestore");
+      } else {
+        await updateLastLogin(firebaseUser.uid);
+        console.log("[Auth] Last login actualizado no Firestore");
+      }
+    } catch (firestoreError) {
+      // Log do erro mas NÃO impede o login
+      console.warn("[Auth] Não foi possível gravar no Firestore (permissões?):", firestoreError);
+      // O login ainda é bem-sucedido porque o Firebase Auth já autenticou
     }
 
     return userData;
