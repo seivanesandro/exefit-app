@@ -107,6 +107,7 @@ export function ExerciseDetails({
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 50vw"
               priority
+              unoptimized={currentImage.image?.includes("wger.de")}
             />
           </div>
 

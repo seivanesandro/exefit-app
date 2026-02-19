@@ -29,6 +29,8 @@ export function ExerciseCard({
 
   const isGif = mainImage?.toLowerCase().endsWith(".gif");
 
+  const isUnoptimized = isGif || mainImage?.includes("wger.de");
+
   const handleImageClick = () => {
     if (exercise.images && exercise.images.length > 0) {
       setLightboxIndex(0);
@@ -51,7 +53,7 @@ export function ExerciseCard({
             fill
             className="object-cover hover:scale-105 transition-transform duration-300"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            unoptimized={isGif}
+            unoptimized={isUnoptimized}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-3">

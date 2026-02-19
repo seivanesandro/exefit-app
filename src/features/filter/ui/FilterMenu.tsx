@@ -124,15 +124,14 @@ export const FilterMenu = memo(function FilterMenu({ onFilterChange }: FilterMen
         <Button
           onClick={clearFilters}
           disabled={clearing}
-          className=" w-auto px-2 bg-gray-800 text-white hover:bg-[var(--destructive)] font-semibold cursor-pointer"
+          className=" w-auto px-3 text-white bg-[var(--destructive)] hover:bg-[var(--destructive-b)] font-semibold cursor-pointer"
         >
           {clearing ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Cleaning...
             </>
           ) : (
-            <FunnelX className="w-3 h-3" />
+            <FunnelX className="w-5 h-5" />
           )}
         </Button>
       )}

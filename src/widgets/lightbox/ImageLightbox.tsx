@@ -94,15 +94,18 @@ export function ImageLightbox({
       )}
 
       {/* Image */}
-      <div className="relative w-full h-full flex items-center justify-center">
-        <Image
-          src={currentImage.image}
-          alt={exerciseName ? `${exerciseName} - Image ${currentIndex + 1}` : `Exercise Image ${currentIndex + 1}`}
-          fill
-          className="object-contain"
-          sizes="100vw"
-          priority
-        />
+      <div className="flex items-center justify-center w-full h-full min-h-[300px] min-w-[300px]">
+        <div className="relative w-full max-w-md aspect-square bg-white">
+          <Image
+            src={currentImage.image}
+            alt={exerciseName ? `${exerciseName} - Image ${currentIndex + 1}` : `Exercise Image ${currentIndex + 1}`}
+            fill
+            className="object-contain"
+            sizes="100vw"
+            priority
+            unoptimized={!!currentImage.image && currentImage.image.startsWith("https://wger.de/")}
+          />
+        </div>
       </div>
 
       {/* Next Button */}
