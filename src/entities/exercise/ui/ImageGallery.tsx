@@ -25,7 +25,7 @@ export function ImageGallery({
               fill
               className="object-cover hover:scale-110 transition-transform duration-300"
               sizes="(max-width: 768px) 25vw, 15vw"
-              unoptimized={currentImage.image?.includes("wger.de")}
+              unoptimized={!!image.image && image.image.includes("wger.de")}
             />
             {image.is_main && (
               <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-2 py-1 rounded">
