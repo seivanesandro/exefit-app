@@ -100,7 +100,7 @@ export function ImageLightbox({
             src={currentImage.image}
             alt={exerciseName ? `${exerciseName} - Image ${currentIndex + 1}` : `Exercise Image ${currentIndex + 1}`}
             fill
-            className="object-contain"
+            className="object-contain "
             sizes="100vw"
             priority
             unoptimized={!!currentImage.image && currentImage.image.startsWith("https://wger.de/")}
