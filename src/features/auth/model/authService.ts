@@ -7,7 +7,7 @@ import {
 } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { auth } from "@/shared/lib/firebase";
-import { createUser, updateLastLogin } from "@/entities/user/api/userApi";
+import { upsertUser } from "@/entities/user/api/userApi";
 import type { User, FirebaseTimestamp } from "@/entities/types";
 
 /**
@@ -47,23 +47,20 @@ export async function loginWithGoogle(): Promise<User> {
       lastLogin: now,
     };
 
-    // Tenta gravar no Firestore, mas NÃO bloqueia o login se falhar
-    // (útil se as regras do Firestore não permitirem escrita)
+    // Grava/actualiza o utilizador no Firestore.
+    // Usa upsertUser (setDoc + merge) que funciona tanto para novos utilizadores
+    // como para os já existentes, sem necessitar de verificar isNewUser.
     try {
-      const isNewUser =
-        result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
-
-      if (isNewUser) {
-        await createUser(userData);
-        console.log("[Auth] Novo utilizador criado no Firestore");
-      } else {
-        await updateLastLogin(firebaseUser.uid);
-        console.log("[Auth] Last login actualizado no Firestore");
-      }
+      await upsertUser({
+        ...userData,
+        // Passa o creationTime imutável do Firebase Auth para preservar a data real
+        firebaseCreationTime: firebaseUser.metadata.creationTime ?? undefined,
+      });
+      console.log("[Auth] Utilizador guardado/actualizado no Firestore:", firebaseUser.uid);
     } catch (firestoreError) {
-      // Log do erro mas NÃO impede o login
-      console.warn("[Auth] Não foi possível gravar no Firestore (permissões?):", firestoreError);
-      // O login ainda é bem-sucedido porque o Firebase Auth já autenticou
+      // Log detalhado para facilitar diagnóstico (permissões, rede, etc.)
+      console.error("[Auth] Erro ao guardar utilizador no Firestore:", firestoreError);
+      // NÃO bloqueia o login — o utilizador fica autenticado via Firebase Auth
     }
 
     return userData;

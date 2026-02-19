@@ -2,27 +2,38 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regras para a coleção de favoritos
+
+    // ─── Regras para a coleção de utilizadores ──────────────────────────────
+    match /users/{userId} {
+      // Um utilizador só pode ler/escrever o seu próprio documento
+      allow get: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      // Não permitir delete de utilizadores pela app
+      allow delete: if false;
+    }
+
+    // ─── Regras para a coleção de favoritos ─────────────────────────────────
     match /favorites/{favoriteId} {
-      // Permitir leitura apenas se autenticado E se o userId corresponde ao uid do utilizador
-      allow read: if request.auth != null && 
+      // Leitura (get individual + list/query).
+      // Para queries, o Firestore valida que todos os docs da query passam esta regra.
+      // Como a query usa where("userId","==", uid) e a regra verifica o mesmo campo,
+      // o Firestore aceita a query quando uid == request.auth.uid.
+      allow read: if request.auth != null &&
                      resource.data.userId == request.auth.uid;
-      
-      // Permitir criar favorito apenas se autenticado E se o userId corresponde ao uid do utilizador
-      allow create: if request.auth != null && 
+
+      // Criar: o userId no documento tem de corresponder ao uid autenticado
+      allow create: if request.auth != null &&
                        request.resource.data.userId == request.auth.uid;
-      
-      // Permitir atualizar favorito apenas se autenticado E se o userId corresponde ao uid do utilizador
-      allow update: if request.auth != null && 
+
+      // Atualizar/Eliminar: o documento pertence ao utilizador autenticado
+      allow update: if request.auth != null &&
                        resource.data.userId == request.auth.uid;
-      
-      // Permitir deletar favorito apenas se autenticado E se o userId corresponde ao uid do utilizador
-      allow delete: if request.auth != null && 
+      allow delete: if request.auth != null &&
                        resource.data.userId == request.auth.uid;
     }
-    
-    // Negar acesso a todas as outras coleções por padrão
+
+    // ─── Negar todo o resto por defeito ─────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }
