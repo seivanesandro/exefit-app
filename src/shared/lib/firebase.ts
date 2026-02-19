@@ -11,6 +11,16 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// confirmar que as variáveis chegam em produção
+if (typeof window !== "undefined") {
+  console.log("[Firebase] Config check:", {
+    apiKey: firebaseConfig.apiKey ? "✅ OK" : "❌ MISSING",
+    authDomain: firebaseConfig.authDomain ? "✅ OK" : "❌ MISSING",
+    projectId: firebaseConfig.projectId ? "✅ OK" : "❌ MISSING",
+    appId: firebaseConfig.appId ? "✅ OK" : "❌ MISSING",
+  });
+}
+
 // Inicializar Firebase de forma segura (evita re-inicialização)
 let app: FirebaseApp;
 if (!getApps().length) {
