@@ -5,7 +5,8 @@ import { useAuth } from "@/shared/hooks/useAuth";
 import { subscribeFavorites, removeFavorite } from "@/entities/favorite/api/favoriteApi";
 import { ExerciseCard, ExerciseCardSkeleton } from "@/entities/exercise/ui/ExerciseCard";
 import { fetchExerciseById } from "@/entities/exercise/api/exerciseApi";
-import { getCachedExercise } from "@/shared/lib/cache";
+
+//import { getCachedExercise } from "@/shared/lib/cache";
 import type { Exercise } from "@/entities/types";
 import { Heart } from "lucide-react";
 import Link from "next/link";
@@ -21,25 +22,12 @@ function FavoriteItem({ favoriteId, onRemove }: { favoriteId: number; onRemove: 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    /**
-     * Carrega os dados do exercício, priorizando o cache local.
-     * Só faz pedido à API WGER se não existir no cache (optimização de performance).
-     */
     const loadExercise = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        // 1. Tenta buscar do cache local primeiro
-        let exerciseData = await getCachedExercise(favoriteId);
-
-        // 2. Se não estiver no cache, busca na API remota
-        if (!exerciseData) {
-          console.log(`[Cache Miss] A buscar exercício ${favoriteId} da API.`);
-          exerciseData = await fetchExerciseById(favoriteId);
-        } else {
-          console.log(`[Cache Hit] Exercício ${favoriteId} carregado do cache.`);
-        }
-
+        // Busca SEMPRE da API remota
+        const exerciseData = await fetchExerciseById(favoriteId);
         if (exerciseData) {
           setExercise(exerciseData);
         } else {
@@ -52,7 +40,6 @@ function FavoriteItem({ favoriteId, onRemove }: { favoriteId: number; onRemove: 
         setIsLoading(false);
       }
     };
-
     loadExercise();
   }, [favoriteId]);
 
